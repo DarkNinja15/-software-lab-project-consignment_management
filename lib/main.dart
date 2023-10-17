@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_consignment/screens/home.dart';
 import 'package:flutter_consignment/screens/login.dart';
 import 'package:flutter_consignment/screens/register.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -17,7 +23,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
       ),
-      home: HomePage(),
+      home: Register(),
     );
   }
 }

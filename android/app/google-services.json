@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1081659507117",
+    "project_id": "consignment-40c50",
+    "storage_bucket": "consignment-40c50.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1081659507117:android:e40201e1c564dd6c482124",
+        "android_client_info": {
+          "package_name": "com.example.flutter_consignment"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKVVz35tla-sufXFoB1nr7I-jMNO6AFRU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
