@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_consignment/screens/home.dart';
 import 'package:flutter_consignment/screens/login.dart';
-import 'package:flutter_consignment/screens/register.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +23,28 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
       ),
-      home: Register(),
+      home: StreamBuilder(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return const HomePage();
+            }
+            if (snapshot.hasError) {
+              return const Scaffold(
+                body: Center(
+                  child: Text('Something went wrong!'),
+                ),
+              );
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            return const Login();
+          }),
     );
   }
 }

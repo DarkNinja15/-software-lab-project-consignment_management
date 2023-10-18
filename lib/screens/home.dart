@@ -1,8 +1,43 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_consignment/screens/login.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String userName = '';
+  bool isLoadingDialog = false;
+  @override
+  void initState() {
+    setState(() {
+      isLoading = true;
+    });
+    getUserName();
+    setState(() {
+      isLoading = false;
+    });
+    super.initState();
+  }
+
+  void getUserName() async {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get()
+        .then((value) {
+      setState(() {
+        userName = value['name'];
+      });
+    });
+  }
+
+  bool isLoading = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,8 +61,10 @@ class HomePage extends StatelessWidget {
                     return AlertDialog(
                       title: const Text('Edit Name'),
                       content: TextField(
-                        controller: TextEditingController(text: 'EvilShadow'),
-                        onChanged: (value) {},
+                        controller: TextEditingController(text: userName),
+                        onChanged: (value) {
+                          userName = value;
+                        },
                       ),
                       actions: [
                         TextButton(
@@ -36,12 +73,36 @@ class HomePage extends StatelessWidget {
                             Navigator.of(context).pop();
                           },
                         ),
-                        TextButton(
-                          child: const Text('Save'),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                        ),
+                        isLoadingDialog
+                            ? const CircularProgressIndicator(
+                                color: Colors.blue,
+                              )
+                            : TextButton(
+                                child: const Text('Save'),
+                                onPressed: () async {
+                                  setState(() {
+                                    isLoadingDialog = true;
+                                  });
+                                  await FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(FirebaseAuth
+                                          .instance.currentUser!.uid)
+                                      .update({
+                                    'name': userName,
+                                  }).then((value) {
+                                    Navigator.of(context).pop();
+                                  }).catchError((error) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(error.toString()),
+                                      ),
+                                    );
+                                  });
+                                  setState(() {
+                                    isLoadingDialog = true;
+                                  });
+                                },
+                              ),
                       ],
                     );
                   },
@@ -64,12 +125,39 @@ class HomePage extends StatelessWidget {
                             Navigator.of(context).pop();
                           },
                         ),
-                        TextButton(
-                          child: const Text('Logout'),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                        ),
+                        isLoadingDialog
+                            ? const CircularProgressIndicator(
+                                color: Colors.blue,
+                              )
+                            : TextButton(
+                                child: const Text('Logout'),
+                                onPressed: () async {
+                                  setState(() {
+                                    isLoadingDialog = true;
+                                  });
+                                  await FirebaseAuth.instance
+                                      .signOut()
+                                      .then((value) {
+                                    Navigator.of(context)
+                                        .pushReplacement(
+                                      MaterialPageRoute(
+                                        builder: (context) => const Login(),
+                                      ),
+                                    )
+                                        .catchError((error) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(error.toString()),
+                                        ),
+                                      );
+                                    });
+                                  });
+                                  setState(() {
+                                    isLoadingDialog = false;
+                                  });
+                                },
+                              ),
                       ],
                     );
                   },
@@ -80,133 +168,140 @@ class HomePage extends StatelessWidget {
         elevation: 1,
       ),
       body: Center(
-        child: SingleChildScrollView(
-          // physics: const ,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8.0,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'Welcome EvilShadow!',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 10,
-                    ),
-                    Image.asset(
-                      'assets/delivery.png',
-                      height: 80,
-                    ),
-                  ],
-                ),
-                const Text('Your Consignments: 0'),
-                Row(
-                  children: [
-                    Flexible(
-                      flex: 8,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
+        child: isLoading
+            ? const CircularProgressIndicator(
+                color: Colors.blue,
+              )
+            : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8.0,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: 100,
-                              itemBuilder: (context, index) {
-                                return Stack(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 8,
-                                      ),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          border: Border.all(),
-                                          borderRadius:
-                                              BorderRadius.circular(5),
-                                        ),
-                                        child: ListTile(
-                                          title: const Text('Consignment1'),
-                                          subtitle:
-                                              const Text('Status: Active'),
-                                          trailing: IconButton(
-                                              onPressed: () {
-                                                showDialog(
-                                                  context: context,
-                                                  builder:
-                                                      (BuildContext context) {
-                                                    return AlertDialog(
-                                                      title: const Text(
-                                                          'Delete Consignment'),
-                                                      content: const Text(
-                                                          'Are you sure you want to delete this consignment?'),
-                                                      actions: [
-                                                        TextButton(
-                                                          child: const Text(
-                                                              'Cancel'),
-                                                          onPressed: () {
-                                                            Navigator.of(
-                                                                    context)
-                                                                .pop();
-                                                          },
-                                                        ),
-                                                        TextButton(
-                                                          child: const Text(
-                                                              'Delete'),
-                                                          onPressed: () {
-                                                            Navigator.of(
-                                                                    context)
-                                                                .pop();
-                                                          },
-                                                        ),
-                                                      ],
-                                                    );
-                                                  },
-                                                );
-                                              },
-                                              icon: const Icon(Icons.delete),
-                                              color: Colors.red),
-                                          onTap: () {},
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 8,
-                                      ),
-                                      child: LinearProgressIndicator(
-                                        value: 0.5,
-                                        backgroundColor: Colors.grey[200],
-                                        valueColor:
-                                            const AlwaysStoppedAnimation<Color>(
-                                          Colors.green,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }),
+                          Text(
+                            'Welcome $userName!',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Image.asset(
+                            'assets/delivery.png',
+                            height: 80,
+                          ),
                         ],
                       ),
-                    ),
-                    const Flexible(
-                      flex: 2,
-                      child: SizedBox.shrink(),
-                    )
-                  ],
+                      const Text('Your Consignments: 0'),
+                      Row(
+                        children: [
+                          Flexible(
+                            flex: 8,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: 100,
+                                    itemBuilder: (context, index) {
+                                      return Stack(
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                border: Border.all(),
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                              ),
+                                              child: ListTile(
+                                                title:
+                                                    const Text('Consignment1'),
+                                                subtitle: const Text(
+                                                    'Status: Active'),
+                                                trailing: IconButton(
+                                                    onPressed: () {
+                                                      showDialog(
+                                                        context: context,
+                                                        builder: (BuildContext
+                                                            context) {
+                                                          return AlertDialog(
+                                                            title: const Text(
+                                                                'Delete Consignment'),
+                                                            content: const Text(
+                                                                'Are you sure you want to delete this consignment?'),
+                                                            actions: [
+                                                              TextButton(
+                                                                child: const Text(
+                                                                    'Cancel'),
+                                                                onPressed: () {
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop();
+                                                                },
+                                                              ),
+                                                              TextButton(
+                                                                child: const Text(
+                                                                    'Delete'),
+                                                                onPressed: () {
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop();
+                                                                },
+                                                              ),
+                                                            ],
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                    icon: const Icon(
+                                                        Icons.delete),
+                                                    color: Colors.red),
+                                                onTap: () {},
+                                              ),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
+                                            child: LinearProgressIndicator(
+                                              value: 0.5,
+                                              backgroundColor: Colors.grey[200],
+                                              valueColor:
+                                                  const AlwaysStoppedAnimation<
+                                                      Color>(
+                                                Colors.green,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }),
+                              ],
+                            ),
+                          ),
+                          const Flexible(
+                            flex: 2,
+                            child: SizedBox.shrink(),
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

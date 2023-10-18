@@ -87,6 +87,7 @@ class _RegisterState extends State<Register> {
                                 .doc(FirebaseAuth.instance.currentUser!.uid)
                                 .set({
                               'email': emailController.text,
+                              'name': nameController.text,
                               'password': passwordController.text,
                             }).then((value) {
                               Navigator.of(context).pushReplacement(
