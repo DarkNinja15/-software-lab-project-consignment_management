@@ -1,8 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_consignment/models/user_model.dart';
 import 'package:flutter_consignment/screens/home.dart';
 import 'package:flutter_consignment/screens/login.dart';
+import 'package:flutter_consignment/services/auth.dart';
+import 'package:flutter_consignment/services/local%20storage/user_preferences.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -76,40 +77,19 @@ class _RegisterState extends State<Register> {
                           setState(() {
                             isLoading = true;
                           });
-                          await FirebaseAuth.instance
-                              .createUserWithEmailAndPassword(
-                            email: emailController.text,
-                            password: passwordController.text,
-                          )
-                              .then((value) async {
-                            await FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(FirebaseAuth.instance.currentUser!.uid)
-                                .set({
-                              'email': emailController.text,
-                              'name': nameController.text,
-                              'password': passwordController.text,
-                            }).then((value) {
+                          UserModel? user = await AuthMethods().register(
+                            nameController.text.trim(),
+                            emailController.text.trim(),
+                            passwordController.text.trim(),
+                            context,
+                          );
+                          if (user != null) {
+                            await UserPreferences.saveUser(user).then((value) {
                               Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (context) => const HomePage(),
-                                ),
-                              );
-                            }).catchError((e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(e.toString()),
-                                ),
-                              );
+                                  MaterialPageRoute(
+                                      builder: (context) => const HomePage()));
                             });
-                          }).catchError((e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(e.toString()),
-                              ),
-                            );
-                          });
-
+                          }
                           setState(() {
                             isLoading = false;
                           });

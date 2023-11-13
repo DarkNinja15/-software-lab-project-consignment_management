@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_consignment/models/user_model.dart';
 import 'package:flutter_consignment/screens/login.dart';
+import 'package:flutter_consignment/services/local%20storage/user_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,25 +17,15 @@ class _HomePageState extends State<HomePage> {
   bool isLoadingDialog = false;
   @override
   void initState() {
-    setState(() {
-      isLoading = true;
-    });
     getUserName();
-    setState(() {
-      isLoading = false;
-    });
     super.initState();
   }
 
   void getUserName() async {
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .get()
-        .then((value) {
-      setState(() {
-        userName = value['name'];
-      });
+    UserModel? user = await UserPreferences.loadUser();
+    setState(() {
+      userName = user?.name ?? "";
+      // print(userName);
     });
   }
 

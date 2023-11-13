@@ -1,7 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_consignment/models/user_model.dart';
 import 'package:flutter_consignment/screens/home.dart';
 import 'package:flutter_consignment/screens/register.dart';
+import 'package:flutter_consignment/services/auth.dart';
+import 'package:flutter_consignment/services/local%20storage/user_preferences.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -67,26 +69,20 @@ class _LoginState extends State<Login> {
                           setState(() {
                             isLoading = true;
                           });
-                          await FirebaseAuth.instance
-                              .signInWithEmailAndPassword(
-                            email: emailController.text,
-                            password: passwordController.text,
-                          )
-                              .then((value) {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) => const HomePage(),
-                              ),
-                            );
-                            setState(() {
-                              isLoading = true;
+                          UserModel? user = await AuthMethods().login(
+                            emailController.text.trim(),
+                            passwordController.text.trim(),
+                            context,
+                          );
+                          if (user != null) {
+                            await UserPreferences.saveUser(user).then((value) {
+                              Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                      builder: (context) => const HomePage()));
                             });
-                          }).catchError((error) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(error.toString()),
-                              ),
-                            );
+                          }
+                          setState(() {
+                            isLoading = false;
                           });
                         },
                         child: const Text('Login'),
