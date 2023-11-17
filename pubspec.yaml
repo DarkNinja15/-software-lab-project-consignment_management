@@ -30,10 +30,15 @@ environment:
 dependencies:
   cloud_firestore: ^4.10.0
   cupertino_icons: ^1.0.2
+  dropdown_below: ^1.0.3
   firebase_auth: ^4.11.0
   firebase_core: ^2.18.0
+  firebase_storage: ^11.5.1
   flutter:
     sdk: flutter
+  image_picker: ^1.0.4
+  material_dialogs: ^1.1.4
+  provider: ^6.1.1
   shared_preferences: ^2.2.2
   uuid: ^4.2.1
 

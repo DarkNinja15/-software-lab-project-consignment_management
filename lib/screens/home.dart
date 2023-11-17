@@ -1,9 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_consignment/models/user_model.dart';
+import 'package:flutter_consignment/models/consignment_model.dart';
+import 'package:flutter_consignment/models/product_model.dart';
+// import 'package:flutter_consignment/models/user_model.dart';
 import 'package:flutter_consignment/screens/login.dart';
-import 'package:flutter_consignment/services/local%20storage/user_preferences.dart';
+import 'package:flutter_consignment/services/databse.dart';
+// import 'package:flutter_consignment/services/local%20storage/user_preferences.dart';
+import 'package:flutter_consignment/widgets/consignment_tile.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +18,20 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  TextEditingController namecontroller = TextEditingController();
+  TextEditingController prodIdcontroller = TextEditingController();
+  List<Consignment> myConsignments = [];
+  List<Product> allProds = [];
+  final _formKey = GlobalKey<FormState>();
+  bool consignmentsLoading = false;
+
+  @override
+  void dispose() {
+    namecontroller.dispose();
+    prodIdcontroller.dispose();
+    super.dispose();
+  }
+
   String userName = '';
   bool isLoadingDialog = false;
   @override
@@ -21,11 +40,40 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  void getUserName() async {
-    UserModel? user = await UserPreferences.loadUser();
+  @override
+  void didChangeDependencies() {
     setState(() {
-      userName = user?.name ?? "";
-      // print(userName);
+      consignmentsLoading = true;
+    });
+    final prods = Provider.of<List<Consignment>>(context);
+    allProds = Provider.of<List<Product>>(context);
+    myConsignments = [];
+    for (int i = 0; i < prods.length; i++) {
+      if (prods[i].userid == FirebaseAuth.instance.currentUser!.uid) {
+        myConsignments.add(prods[i]);
+      }
+    }
+    myConsignments.sort(
+      (a, b) {
+        return a.consignmentName.compareTo(b.consignmentName);
+      },
+    );
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        consignmentsLoading = false;
+      });
+    });
+
+    super.didChangeDependencies();
+  }
+
+  void getUserName() async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get()
+        .then((value) {
+      userName = value.data()!['name'];
     });
   }
 
@@ -159,142 +207,87 @@ class _HomePageState extends State<HomePage> {
         ],
         elevation: 1,
       ),
-      body: Center(
-        child: isLoading
-            ? const CircularProgressIndicator(
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
                 color: Colors.blue,
-              )
-            : SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8.0,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Welcome $userName!',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+              ),
+            )
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8.0,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Welcome $userName!',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(
-                            width: 10,
+                        ),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Image.asset(
+                          'assets/delivery.png',
+                          height: 80,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Text('Your Consignments: ${myConsignments.length}'),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Row(
+                      children: [
+                        Flexible(
+                          flex: 8,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              consignmentsLoading
+                                  ? const Center(
+                                      child: CircularProgressIndicator(
+                                      color: Colors.blue,
+                                    ))
+                                  : ListView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: myConsignments.length,
+                                      itemBuilder: (context, index) {
+                                        return ConsignmentTile(
+                                          consignment: myConsignments[index],
+                                          product:
+                                              allProds.firstWhere((element) {
+                                            return element.prodId ==
+                                                myConsignments[index]
+                                                    .consignmentId;
+                                          }),
+                                        );
+                                      }),
+                            ],
                           ),
-                          Image.asset(
-                            'assets/delivery.png',
-                            height: 80,
-                          ),
-                        ],
-                      ),
-                      const Text('Your Consignments: 0'),
-                      Row(
-                        children: [
-                          Flexible(
-                            flex: 8,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                ListView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: 100,
-                                    itemBuilder: (context, index) {
-                                      return Stack(
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 8,
-                                            ),
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                border: Border.all(),
-                                                borderRadius:
-                                                    BorderRadius.circular(5),
-                                              ),
-                                              child: ListTile(
-                                                title:
-                                                    const Text('Consignment1'),
-                                                subtitle: const Text(
-                                                    'Status: Active'),
-                                                trailing: IconButton(
-                                                    onPressed: () {
-                                                      showDialog(
-                                                        context: context,
-                                                        builder: (BuildContext
-                                                            context) {
-                                                          return AlertDialog(
-                                                            title: const Text(
-                                                                'Delete Consignment'),
-                                                            content: const Text(
-                                                                'Are you sure you want to delete this consignment?'),
-                                                            actions: [
-                                                              TextButton(
-                                                                child: const Text(
-                                                                    'Cancel'),
-                                                                onPressed: () {
-                                                                  Navigator.of(
-                                                                          context)
-                                                                      .pop();
-                                                                },
-                                                              ),
-                                                              TextButton(
-                                                                child: const Text(
-                                                                    'Delete'),
-                                                                onPressed: () {
-                                                                  Navigator.of(
-                                                                          context)
-                                                                      .pop();
-                                                                },
-                                                              ),
-                                                            ],
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                                    icon: const Icon(
-                                                        Icons.delete),
-                                                    color: Colors.red),
-                                                onTap: () {},
-                                              ),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 8,
-                                            ),
-                                            child: LinearProgressIndicator(
-                                              value: 0.5,
-                                              backgroundColor: Colors.grey[200],
-                                              valueColor:
-                                                  const AlwaysStoppedAnimation<
-                                                      Color>(
-                                                Colors.green,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    }),
-                              ],
-                            ),
-                          ),
-                          const Flexible(
-                            flex: 2,
-                            child: SizedBox.shrink(),
-                          )
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                        const Flexible(
+                          flex: 2,
+                          child: SizedBox.shrink(),
+                        )
+                      ],
+                    ),
+                  ],
                 ),
               ),
-      ),
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showDialog(
@@ -302,25 +295,47 @@ class _HomePageState extends State<HomePage> {
             builder: (BuildContext context) {
               return AlertDialog(
                 title: const Text('Create Consignment'),
-                content: const Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Consignment Name',
-                        border: OutlineInputBorder(),
-                      ),
+                content: SizedBox(
+                  width: 300,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          keyboardType: TextInputType.name,
+                          controller: namecontroller,
+                          decoration: const InputDecoration(
+                            labelText: 'Consignment Name',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (val) {
+                            if (val == null || val.isEmpty) {
+                              return 'Please enter a name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          keyboardType: TextInputType.text,
+                          controller: prodIdcontroller,
+                          decoration: const InputDecoration(
+                            labelText: 'Product ID',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (val) {
+                            if (val == null || val.isEmpty) {
+                              return 'Please enter a product id';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 10),
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Product ID',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                actions: <Widget>[
+                actions: [
                   TextButton(
                     style: TextButton.styleFrom(),
                     child: const Text('Cancel'),
@@ -331,9 +346,27 @@ class _HomePageState extends State<HomePage> {
                   TextButton(
                     style: TextButton.styleFrom(),
                     child: const Text('Create'),
-                    onPressed: () {
-                      print('Creating consignment');
-                      Navigator.of(context).pop();
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        setState(() {
+                          isLoadingDialog = true;
+                        });
+                        await Database()
+                            .createConsignment(prodIdcontroller.text.trim(),
+                                namecontroller.text.trim(), context)
+                            .then((value) {
+                          prodIdcontroller.text = "";
+                          namecontroller.text = "";
+                          Navigator.of(context).pop();
+                          if (value) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Success')));
+                          }
+                        });
+                        setState(() {
+                          isLoadingDialog = false;
+                        });
+                      }
                     },
                   ),
                 ],

@@ -1,39 +1,36 @@
 import 'dart:convert';
 
-class Consignment {
-  final String id;
-  final String userid;
-  final String name;
-  final String status;
-  final String dateRecieved;
+// import 'package:flutter_consignment/constants/constants.dart';
 
-  Consignment(
-    this.id,
-    this.userid,
-    this.name,
-    this.status,
-    this.dateRecieved,
-  );
+class Consignment {
+  final String consignmentId;
+  final String consignmentName;
+  final String userid;
+  final DateTime lastUpdated;
+  Consignment({
+    required this.consignmentId,
+    required this.consignmentName,
+    required this.userid,
+    required this.lastUpdated,
+  });
 
   Map<String, dynamic> toMap() {
     final result = <String, dynamic>{};
 
-    result.addAll({'id': id});
+    result.addAll({'consignmentId': consignmentId});
+    result.addAll({'consignmentName': consignmentName});
     result.addAll({'userid': userid});
-    result.addAll({'name': name});
-    result.addAll({'status': status});
-    result.addAll({'dateRecieved': dateRecieved});
+    result.addAll({'lastUpdated': lastUpdated.toString()});
 
     return result;
   }
 
   factory Consignment.fromMap(Map<String, dynamic> map) {
     return Consignment(
-      map['id'] ?? '',
-      map['userid'] ?? '',
-      map['name'] ?? '',
-      map['status'] ?? '',
-      map['dateRecieved'] ?? '',
+      consignmentId: map['consignmentId'] ?? '',
+      consignmentName: map['consignmentName'] ?? '',
+      userid: map['userid'] ?? '',
+      lastUpdated: DateTime.fromMillisecondsSinceEpoch(map['lastUpdated']),
     );
   }
 

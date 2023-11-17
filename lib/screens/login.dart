@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_consignment/models/user_model.dart';
+// import 'package:flutter_consignment/models/user_model.dart';
+import 'package:flutter_consignment/screens/company.dart';
 import 'package:flutter_consignment/screens/home.dart';
 import 'package:flutter_consignment/screens/register.dart';
 import 'package:flutter_consignment/services/auth.dart';
-import 'package:flutter_consignment/services/local%20storage/user_preferences.dart';
+// import 'package:flutter_consignment/services/local%20storage/user_preferences.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -46,18 +47,20 @@ class _LoginState extends State<Login> {
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
+                  keyboardType: TextInputType.emailAddress,
                   controller: emailController,
                   decoration: const InputDecoration(
                     labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
                   ),
                 ),
                 const SizedBox(height: 10),
                 TextFormField(
+                  keyboardType: TextInputType.visiblePassword,
                   controller: passwordController,
                   obscureText: true,
                   decoration: const InputDecoration(
-                    labelText: 'Password',
-                  ),
+                      labelText: 'Password', prefixIcon: Icon(Icons.lock)),
                 ),
                 const SizedBox(height: 20),
                 isLoading
@@ -66,24 +69,53 @@ class _LoginState extends State<Login> {
                       )
                     : ElevatedButton(
                         onPressed: () async {
-                          setState(() {
-                            isLoading = true;
-                          });
-                          UserModel? user = await AuthMethods().login(
-                            emailController.text.trim(),
-                            passwordController.text.trim(),
-                            context,
-                          );
-                          if (user != null) {
-                            await UserPreferences.saveUser(user).then((value) {
-                              Navigator.of(context).pushReplacement(
+                          if (emailController.text.isEmpty ||
+                              passwordController.text.isEmpty) {
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(const SnackBar(
+                              content: Text('Please enter all fields'),
+                            ));
+                            return;
+                          }
+                          if (emailController.text.endsWith("@company.com") &&
+                              passwordController.text == "password@123") {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (context) => const CompanyPage(),
+                              ),
+                              (route) => false,
+                            );
+                            return;
+                          } else {
+                            setState(() {
+                              isLoading = true;
+                            });
+                            await AuthMethods()
+                                .login(
+                              emailController.text.trim(),
+                              passwordController.text.trim(),
+                              context,
+                            )
+                                .then((value) {
+                              if (value != null) {
+                                Navigator.of(context).pushAndRemoveUntil(
                                   MaterialPageRoute(
-                                      builder: (context) => const HomePage()));
+                                    builder: (context) => const HomePage(),
+                                  ),
+                                  (route) => false,
+                                );
+                              }
+                            });
+                            // if (user != null) {
+                            //   await UserPreferences.saveUser(user)
+                            //       .then((value) {
+                            //     setState(() {});
+                            //   });
+                            // }
+                            setState(() {
+                              isLoading = false;
                             });
                           }
-                          setState(() {
-                            isLoading = false;
-                          });
                         },
                         child: const Text('Login'),
                       ),
